@@ -1,0 +1,47 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  background-color: #0a0a0a;
+  color: #ffffff;
+  font-family: 'Barlow Condensed', sans-serif;
+  max-width: 500px;
+  margin: 0 auto;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+#root {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.page-content {
+  flex: 1;
+  overflow-y: auto;
+  padding-bottom: calc(64px + var(--safe-bottom));
+}
+
+h1, h2, h3, .font-heading {
+  font-family: 'Bebas Neue', cursive;
+}
+
+::-webkit-scrollbar {
+  display: none;
+}
+
+.card {
+  background: #141414;
+  border: 1px solid #2a2a2a;
+  border-radius: 12px;
+}
