@@ -3,7 +3,7 @@ import BottomNav from './components/BottomNav'
 import Home from './pages/Home'
 import Squad from './pages/Squad'
 import Matches from './pages/Matches'
-import Training from './pages/Training'
+import About from './pages/About'
 import Table from './pages/Table'
 import AdminLogin from './pages/admin/AdminLogin'
 import AdminDashboard from './pages/admin/AdminDashboard'
@@ -16,7 +16,7 @@ export default function App() {
         <Route path="/" element={<Home />} />
         <Route path="/squad" element={<Squad />} />
         <Route path="/matches" element={<Matches />} />
-        <Route path="/training" element={<Training />} />
+        <Route path="/about" element={<About />} />
         <Route path="/table" element={<Table />} />
         <Route path="/admin/login" element={<AdminLogin />} />
         <Route path="/admin/*" element={<AdminRoute />} />

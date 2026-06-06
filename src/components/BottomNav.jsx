@@ -4,7 +4,7 @@ const tabs = [
   { to: '/', label: 'Home', icon: HomeIcon },
   { to: '/squad', label: 'Squad', icon: SquadIcon },
   { to: '/matches', label: 'Matches', icon: MatchIcon },
-  { to: '/training', label: 'Training', icon: TrainingIcon },
+  { to: '/about', label: 'About', icon: AboutIcon },
   { to: '/table', label: 'Table', icon: TableIcon },
 ]
 
@@ -31,10 +31,11 @@ function MatchIcon({ active }) {
     </svg>
   )
 }
-function TrainingIcon({ active }) {
+function AboutIcon({ active }) {
   return (
     <svg viewBox="0 0 24 24" fill={active ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" className="w-5 h-5">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6l4 2M12 3a9 9 0 100 18A9 9 0 0012 3z" />
+      <circle cx="12" cy="12" r="9" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 8h.01M11 12h1v4h1" />
     </svg>
   )
 }
