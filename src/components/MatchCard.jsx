@@ -27,10 +27,14 @@ export default function MatchCard({ match }) {
           </div>
           {isBye ? (
             <div className="font-heading text-xl text-[#666]">BYE WEEK</div>
-          ) : isUpcoming ? (
-            <div className="font-heading text-xl text-white">vs {match.opponent}</div>
           ) : (
             <div className="font-heading text-xl text-white">vs {match.opponent}</div>
+          )}
+          {isUpcoming && match.kickoff_time && (
+            <div className="text-xs text-white font-ui mt-0.5">⏰ {match.kickoff_time}</div>
+          )}
+          {isUpcoming && match.venue && (
+            <div className="text-xs text-[#e8b84b] font-ui mt-0.5">📍 {match.venue}</div>
           )}
           {!isBye && !isUpcoming && match.player_of_day && (
             <div className="text-xs text-[#e8b84b] mt-1">⭐ POD: {match.player_of_day}</div>

@@ -38,15 +38,13 @@ export default function Table() {
           <div className="card overflow-hidden">
             {/* Header */}
             <div className="grid bg-[#1a1a1a] px-3 py-2 text-[10px] text-[#666] uppercase tracking-wider font-ui"
-              style={{ gridTemplateColumns: '1.5rem 1fr 2rem 2rem 2rem 2rem 2rem 2rem 2.5rem' }}>
+              style={{ gridTemplateColumns: '1.5rem 1fr 2.5rem 2.5rem 2.5rem 2.5rem 3rem' }}>
               <span>#</span>
               <span>Team</span>
               <span className="text-center">P</span>
               <span className="text-center">W</span>
               <span className="text-center">D</span>
               <span className="text-center">L</span>
-              <span className="text-center">GF</span>
-              <span className="text-center">GA</span>
               <span className="text-center">Pts</span>
             </div>
             {standings.map((team, i) => {
@@ -55,15 +53,13 @@ export default function Table() {
               return (
                 <div key={team.id}
                   className={`grid px-3 py-3 border-b border-[#1a1a1a] last:border-0 text-sm font-ui ${isDragons ? 'bg-[#c0161c]/10' : ''}`}
-                  style={{ gridTemplateColumns: '1.5rem 1fr 2rem 2rem 2rem 2rem 2rem 2rem 2.5rem' }}>
+                  style={{ gridTemplateColumns: '1.5rem 1fr 2.5rem 2.5rem 2.5rem 2.5rem 3rem' }}>
                   <span className="text-[#666] text-xs self-center">{i + 1}</span>
                   <span className={`font-medium self-center ${isDragons ? 'text-[#e8b84b]' : 'text-white'}`}>{team.team}</span>
                   <span className="text-center text-[#aaa] self-center">{team.played}</span>
                   <span className="text-center text-green-400 self-center">{team.won}</span>
                   <span className="text-center text-[#e8b84b] self-center">{team.drawn}</span>
                   <span className="text-center text-[#c0161c] self-center">{team.lost}</span>
-                  <span className="text-center text-[#aaa] self-center">{team.gf}</span>
-                  <span className="text-center text-[#aaa] self-center">{team.ga}</span>
                   <span className={`text-center font-heading text-lg self-center ${isDragons ? 'text-[#e8b84b]' : 'text-white'}`}>{points}</span>
                 </div>
               )

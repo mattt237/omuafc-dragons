@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabase'
 import { Link } from 'react-router-dom'
 
-const EMPTY = { team: '', played: 0, won: 0, drawn: 0, lost: 0, gf: 0, ga: 0 }
+const EMPTY = { team: '', played: 0, won: 0, drawn: 0, lost: 0 }
 
 function pts(t) {
   return (parseInt(t.won) || 0) * 3 + (parseInt(t.drawn) || 0)
@@ -25,13 +25,11 @@ export default function AdminTable() {
 
   async function save() {
     const payload = {
-      team: form.team,
+      team:   form.team,
       played: parseInt(form.played) || 0,
       won:    parseInt(form.won)    || 0,
       drawn:  parseInt(form.drawn)  || 0,
       lost:   parseInt(form.lost)   || 0,
-      gf:     parseInt(form.gf)     || 0,
-      ga:     parseInt(form.ga)     || 0,
       // always write computed points back so DB stays consistent
       points: pts(form),
     }
@@ -79,8 +77,6 @@ export default function AdminTable() {
         <Row label="Won"><input {...n('won')} /></Row>
         <Row label="Drawn"><input {...n('drawn')} /></Row>
         <Row label="Lost"><input {...n('lost')} /></Row>
-        <Row label="GF"><input {...n('gf')} /></Row>
-        <Row label="GA"><input {...n('ga')} /></Row>
 
         {/* Live points preview */}
         <div className="card p-3 flex items-center justify-between">

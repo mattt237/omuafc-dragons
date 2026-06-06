@@ -5,7 +5,7 @@ import { Link } from 'react-router-dom'
 const EMPTY = {
   date: '', round: '', opponent: '', home_away: 'H', result: '',
   our_score: '', their_score: '', scorers: [], goalie_1: '', goalie_2: '',
-  player_of_day: '', coach_rostered: '', notes: ''
+  player_of_day: '', coach_rostered: '', venue: '', kickoff_time: '', notes: ''
 }
 
 export default function AdminMatches() {
@@ -150,6 +150,8 @@ export default function AdminMatches() {
             <option value="Both">Both</option>
           </select>
         </Row>
+        <Row label="Venue"><input value={form.venue || ''} onChange={e => setForm({ ...form, venue: e.target.value })} placeholder="e.g. Mangere Mountain 1D" className={inputCls} /></Row>
+        <Row label="Kickoff"><input value={form.kickoff_time || ''} onChange={e => setForm({ ...form, kickoff_time: e.target.value })} placeholder="e.g. 9:15am" className={inputCls} /></Row>
         <Row label="Notes"><input value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} placeholder="Optional" className={inputCls} /></Row>
 
         <button onClick={save} className="w-full bg-[#c0161c] text-white font-heading text-2xl py-3 rounded-lg">

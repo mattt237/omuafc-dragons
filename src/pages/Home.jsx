@@ -21,17 +21,24 @@ export default function Home() {
       .order('date', { ascending: true })
 
     if (matches) {
-      const played = matches.filter(m => m.result && m.result !== 'BYE' && m.result !== 'X')
-      const wins = played.filter(m => m.result === 'W').length
-      const losses = played.filter(m => m.result === 'L').length
-      const draws = played.filter(m => m.result === 'D').length
+      // Only W/L/D count toward the season record
+      const competed = matches.filter(m => ['W', 'L', 'D'].includes(m.result))
+      const wins  = competed.filter(m => m.result === 'W').length
+      const losses = competed.filter(m => m.result === 'L').length
+      const draws = competed.filter(m => m.result === 'D').length
+
+      // Goals from all played matches (including abandoned)
+      const played = matches.filter(m => m.result && !['BYE', 'X'].includes(m.result) && m.our_score != null)
       const goals = played.reduce((sum, m) => sum + (m.our_score || 0), 0)
+
       setStats({ wins, losses, draws, goals })
 
-      const pastPlayed = played.filter(m => m.date <= today)
-      if (pastPlayed.length) setLatestMatch(pastPlayed[pastPlayed.length - 1])
+      // Latest result = most recent match with a definitive result
+      const results = matches.filter(m => m.result && !['BYE', 'X'].includes(m.result) && m.date <= today)
+      if (results.length) setLatestMatch(results[results.length - 1])
 
-      const upcoming = matches.filter(m => m.date > today || !m.result)
+      // Next match = earliest match with no result and date >= today
+      const upcoming = matches.filter(m => !m.result && m.date >= today)
       if (upcoming.length) setNextMatch(upcoming[0])
     }
 
@@ -110,12 +117,21 @@ export default function Home() {
 
         {/* Next match */}
         {nextMatch && (
-          <div className="card p-4 border-[#c0161c]/40">
+          <div className="card p-4" style={{ borderColor: '#c0161c44', borderWidth: 1 }}>
             <div className="font-heading text-lg text-[#c0161c] mb-2">NEXT MATCH</div>
             <div className="font-heading text-2xl text-white">vs {nextMatch.opponent || 'TBC'}</div>
             <div className="text-sm text-[#888] font-ui mt-1">
-              Round {nextMatch.round} · {nextMatch.date ? new Date(nextMatch.date + 'T00:00:00').toLocaleDateString('en-NZ', { weekday: 'long', day: 'numeric', month: 'long' }) : 'Date TBC'} · {nextMatch.home_away === 'H' ? 'Home' : 'Away'}
+              Round {nextMatch.round} · {nextMatch.home_away === 'H' ? 'Home' : 'Away'}
             </div>
+            {nextMatch.date && (
+              <div className="text-sm text-white font-ui mt-1">
+                {new Date(nextMatch.date + 'T00:00:00').toLocaleDateString('en-NZ', { weekday: 'long', day: 'numeric', month: 'long' })}
+                {nextMatch.kickoff_time ? ` · ${nextMatch.kickoff_time}` : ''}
+              </div>
+            )}
+            {nextMatch.venue && (
+              <div className="text-xs text-[#e8b84b] mt-1 font-ui">📍 {nextMatch.venue}</div>
+            )}
             <div className="text-xs text-[#666] mt-2 font-ui">Arrive 30 mins before kickoff</div>
           </div>
         )}
