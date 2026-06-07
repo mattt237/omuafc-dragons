@@ -2,11 +2,10 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 
 export default function Home() {
-  const [stats, setStats] = useState({ wins: 0, losses: 0, draws: 0, gf: 0, ga: 0 })
+  const [stats, setStats] = useState(null)
   const [latestMatch, setLatestMatch] = useState(null)
   const [nextMatch, setNextMatch] = useState(null)
   const [topScorers, setTopScorers] = useState([])
-  const [position, setPosition] = useState(null)
 
   useEffect(() => { fetchData() }, [])
 
@@ -19,31 +18,38 @@ export default function Home() {
       supabase.from('standings').select('*'),
     ])
 
-    if (matches) {
-      const competed = matches.filter(m => ['W', 'L', 'D'].includes(m.result))
-      const wins   = competed.filter(m => m.result === 'W').length
-      const losses = competed.filter(m => m.result === 'L').length
-      const draws  = competed.filter(m => m.result === 'D').length
-      const played = matches.filter(m => m.result && !['BYE', 'X'].includes(m.result) && m.our_score != null)
+    if (matches && standings) {
+      // W/D/L from standings row for Dragons
+      const pts = t => (t.won * 3) + t.drawn
+      const sorted = [...standings].sort((a, b) => pts(b) - pts(a) || b.won - a.won)
+      const idx = sorted.findIndex(t => t.team.toLowerCase().includes('dragons'))
+      const dragonsRow = idx !== -1 ? sorted[idx] : null
+
+      // GF/GA from matches (W/L/D only, exclude BYE/abandoned/upcoming)
+      const played = matches.filter(m => ['W', 'L', 'D'].includes(m.result) && m.our_score != null)
       const gf = played.reduce((s, m) => s + (m.our_score || 0), 0)
       const ga = played.reduce((s, m) => s + (m.their_score || 0), 0)
-      setStats({ wins, losses, draws, gf, ga })
 
+      setStats({
+        wins:   dragonsRow?.won   ?? 0,
+        draws:  dragonsRow?.drawn ?? 0,
+        losses: dragonsRow?.lost  ?? 0,
+        pos:    idx !== -1 ? idx + 1 : null,
+        total:  sorted.length,
+        gf,
+        ga,
+      })
+
+      // Latest result
       const results = matches.filter(m => m.result && !['BYE', 'X'].includes(m.result) && m.date <= today)
       if (results.length) setLatestMatch(results[results.length - 1])
 
+      // Next fixture: earliest upcoming (no result) from today onward
       const upcoming = matches.filter(m => !m.result && m.date >= today)
       if (upcoming.length) setNextMatch(upcoming[0])
     }
 
     if (players) setTopScorers(players)
-
-    if (standings) {
-      const pts = t => (t.won * 3) + t.drawn
-      const sorted = [...standings].sort((a, b) => pts(b) - pts(a) || b.won - a.won)
-      const idx = sorted.findIndex(t => t.team.toLowerCase().includes('dragons'))
-      if (idx !== -1) setPosition({ pos: idx + 1, total: sorted.length, team: sorted[idx] })
-    }
   }
 
   return (
@@ -62,35 +68,27 @@ export default function Home() {
 
       <div className="px-4 py-4 space-y-4">
 
-        {/* Season stats */}
-        <div className="card p-4">
-          <div className="font-heading text-2xl text-[#e8b84b] mb-3">SEASON 2026</div>
-          <div className="grid grid-cols-5 gap-2">
-            <StatBox label="Wins"   value={stats.wins}   color="text-green-400" />
-            <StatBox label="Losses" value={stats.losses} color="text-[#c0161c]" />
-            <StatBox label="Draws"  value={stats.draws}  color="text-[#e8b84b]" />
-            <StatBox label="GF"     value={stats.gf}     color="text-white" />
-            <StatBox label="GA"     value={stats.ga}     color="text-[#888]" />
+        {/* Combined stats box */}
+        {stats && (
+          <div className="card p-4">
+            <div className="font-heading text-xl text-[#e8b84b] mb-3">SEASON 2026</div>
+            <div className="grid grid-cols-3 gap-2 mb-2">
+              <StatBox label="Wins"   value={stats.wins}   color="text-green-400" />
+              <StatBox label="Draws"  value={stats.draws}  color="text-[#e8b84b]" />
+              <StatBox label="Losses" value={stats.losses} color="text-[#c0161c]" />
+            </div>
+            <div className="grid grid-cols-3 gap-2">
+              <StatBox
+                label="Position"
+                value={stats.pos ? `${stats.pos}${ordinal(stats.pos)}` : '–'}
+                color="text-white"
+                sub={stats.pos ? `of ${stats.total}` : ''}
+              />
+              <StatBox label="GF" value={stats.gf} color="text-white" />
+              <StatBox label="GA" value={stats.ga} color="text-[#888]" />
+            </div>
           </div>
-        </div>
-
-        {/* Team values */}
-        <div className="card p-4">
-          <div className="font-heading text-lg text-[#666] mb-3">OUR VALUES</div>
-          <div className="grid grid-cols-4 gap-2">
-            {[
-              { word: 'Focus', emoji: '🎯' },
-              { word: 'Fire',  emoji: '🔥' },
-              { word: 'Fair',  emoji: '🤝' },
-              { word: 'Fun',   emoji: '⚡' },
-            ].map(({ word, emoji }) => (
-              <div key={word} className="bg-[#0f0f0f] rounded-lg p-3 text-center">
-                <div className="text-xl mb-1">{emoji}</div>
-                <div className="font-heading text-lg text-[#c0161c] leading-none">{word}</div>
-              </div>
-            ))}
-          </div>
-        </div>
+        )}
 
         {/* Latest result */}
         {latestMatch && (
@@ -100,7 +98,7 @@ export default function Home() {
               <div className="flex-1 min-w-0">
                 <div className="font-heading text-2xl text-white truncate">vs {latestMatch.opponent}</div>
                 <div className="text-sm text-[#888] font-ui">
-                  Round {latestMatch.round} · {new Date(latestMatch.date + 'T00:00:00').toLocaleDateString('en-NZ', { day: 'numeric', month: 'short' })}
+                  Rd {latestMatch.round} · {new Date(latestMatch.date + 'T00:00:00').toLocaleDateString('en-NZ', { day: 'numeric', month: 'short' })} · {latestMatch.home_away === 'H' ? 'Home' : 'Away'}
                 </div>
                 {latestMatch.player_of_day && (
                   <div className="text-sm text-[#e8b84b] mt-1">⭐ {latestMatch.player_of_day}</div>
@@ -117,7 +115,7 @@ export default function Home() {
             <div className="font-heading text-lg text-[#c0161c] mb-2">NEXT FIXTURE</div>
             <div className="font-heading text-2xl text-white">vs {nextMatch.opponent || 'TBC'}</div>
             <div className="text-sm text-[#888] font-ui mt-1">
-              Round {nextMatch.round} · {nextMatch.home_away === 'H' ? 'Home' : 'Away'}
+              Rd {nextMatch.round} · {nextMatch.home_away === 'H' ? 'Home' : 'Away'}
             </div>
             {nextMatch.date && (
               <div className="text-sm text-white font-ui mt-1">
@@ -148,33 +146,6 @@ export default function Home() {
           </div>
         )}
 
-        {/* League position */}
-        {position && (
-          <div className="card p-4">
-            <div className="font-heading text-lg text-[#666] mb-2">LEAGUE POSITION</div>
-            <div className="flex items-center gap-4">
-              <div className="text-center">
-                <div className="font-heading text-5xl text-[#e8b84b]">{position.pos}</div>
-                <div className="text-[10px] text-[#666] uppercase tracking-wider">of {position.total}</div>
-              </div>
-              <div className="flex-1 grid grid-cols-3 gap-2 text-center">
-                <div>
-                  <div className="font-heading text-2xl text-green-400">{position.team.won}</div>
-                  <div className="text-[10px] text-[#666] uppercase tracking-wider">Won</div>
-                </div>
-                <div>
-                  <div className="font-heading text-2xl text-[#e8b84b]">{position.team.drawn}</div>
-                  <div className="text-[10px] text-[#666] uppercase tracking-wider">Drawn</div>
-                </div>
-                <div>
-                  <div className="font-heading text-2xl text-[#c0161c]">{position.team.lost}</div>
-                  <div className="text-[10px] text-[#666] uppercase tracking-wider">Lost</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* Sponsors */}
         <div className="card p-4">
           <div className="font-heading text-lg text-[#666] mb-4">OUR SPONSORS</div>
@@ -189,11 +160,18 @@ export default function Home() {
   )
 }
 
-function StatBox({ label, value, color }) {
+function ordinal(n) {
+  const s = ['th','st','nd','rd']
+  const v = n % 100
+  return s[(v - 20) % 10] || s[v] || s[0]
+}
+
+function StatBox({ label, value, color, sub }) {
   return (
-    <div className="bg-[#0f0f0f] rounded-lg p-2 text-center">
-      <div className={`font-heading text-2xl ${color}`}>{value}</div>
-      <div className="text-[9px] text-[#666] uppercase tracking-wider">{label}</div>
+    <div className="bg-[#0f0f0f] rounded-lg p-3 text-center">
+      <div className={`font-heading text-2xl leading-none ${color}`}>{value}</div>
+      {sub && <div className="text-[9px] text-[#555] mt-0.5">{sub}</div>}
+      <div className="text-[9px] text-[#666] uppercase tracking-wider mt-1">{label}</div>
     </div>
   )
 }
