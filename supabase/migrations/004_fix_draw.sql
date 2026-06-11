@@ -12,13 +12,13 @@ update matches set
   kickoff_time = '9:15am'
 where round = 1;
 
--- Fix Game 2: was BYE → vs MU Mangere1 HOME (unplayed, result stays null)
+-- Fix Game 2: BYE week
 update matches set
-  opponent = 'MU Mangere1',
-  home_away = 'H',
-  result = null,
-  venue = 'Mangere Mountain 1C',
-  kickoff_time = '8:30am',
+  opponent = 'BYE',
+  home_away = null,
+  result = 'BYE',
+  venue = null,
+  kickoff_time = null,
   notes = null
 where round = 2;
 
