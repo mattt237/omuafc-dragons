@@ -95,46 +95,6 @@ export default function Subs() {
           </div>
         </div>
 
-        {/* ON FIELD + TARGET */}
-        <div className="flex gap-3">
-          <div className="card p-3 flex-1 text-center">
-            <div className="text-[10px] font-ui text-[#555] uppercase tracking-widest mb-2">On Field</div>
-            <div className="flex items-center justify-center gap-2">
-              <button onClick={() => setOnField(n => Math.max(1, n - 1))}
-                className="w-8 h-8 rounded-full bg-[#1a1a1a] text-white font-heading text-xl">−</button>
-              <span className="font-heading text-3xl text-white w-8 text-center">{onField}</span>
-              <button onClick={() => setOnField(n => Math.min(10, n + 1))}
-                className="w-8 h-8 rounded-full bg-[#c0161c] text-white font-heading text-xl">+</button>
-            </div>
-          </div>
-          <div className="card p-3 flex-1 text-center">
-            <div className="text-[10px] font-ui text-[#555] uppercase tracking-widest mb-1">Present / Target</div>
-            <div className="font-heading text-3xl text-white">{presentCount}</div>
-            <div className="text-sm text-[#e8b84b] font-ui font-medium">{fmt(targetSecs)} ea</div>
-          </div>
-        </div>
-
-        {/* ATTENDANCE */}
-        <div className="card p-3">
-          <div className="text-[10px] font-ui text-[#555] uppercase tracking-widest mb-2">Attendance — tap to toggle</div>
-          <div className="flex flex-wrap gap-2">
-            {SQUAD.map(name => {
-              const present = players[name].present
-              return (
-                <button key={name} onClick={() => togglePresent(name)}
-                  className="px-3 py-1 rounded-full font-ui text-sm font-medium transition-all"
-                  style={{
-                    backgroundColor: present ? '#c0161c22' : '#1a1a1a',
-                    color: present ? '#fff' : '#444',
-                    border: `1px solid ${present ? '#c0161c' : '#2a2a2a'}`,
-                  }}>
-                  {name}
-                </button>
-              )
-            })}
-          </div>
-        </div>
-
         {/* PLAYER TIMERS */}
         <div className="card overflow-hidden">
           <div className="px-3 pt-2 pb-1">
@@ -222,6 +182,46 @@ export default function Subs() {
                     )}
                   </div>
                 </div>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* ON FIELD + TARGET */}
+        <div className="flex gap-3">
+          <div className="card p-3 flex-1 text-center">
+            <div className="text-[10px] font-ui text-[#555] uppercase tracking-widest mb-2">On Field</div>
+            <div className="flex items-center justify-center gap-2">
+              <button onClick={() => setOnField(n => Math.max(1, n - 1))}
+                className="w-8 h-8 rounded-full bg-[#1a1a1a] text-white font-heading text-xl">−</button>
+              <span className="font-heading text-3xl text-white w-8 text-center">{onField}</span>
+              <button onClick={() => setOnField(n => Math.min(10, n + 1))}
+                className="w-8 h-8 rounded-full bg-[#c0161c] text-white font-heading text-xl">+</button>
+            </div>
+          </div>
+          <div className="card p-3 flex-1 text-center">
+            <div className="text-[10px] font-ui text-[#555] uppercase tracking-widest mb-1">Present / Target</div>
+            <div className="font-heading text-3xl text-white">{presentCount}</div>
+            <div className="text-sm text-[#e8b84b] font-ui font-medium">{fmt(targetSecs)} ea</div>
+          </div>
+        </div>
+
+        {/* ATTENDANCE */}
+        <div className="card p-3">
+          <div className="text-[10px] font-ui text-[#555] uppercase tracking-widest mb-2">Attendance — tap to toggle</div>
+          <div className="flex flex-wrap gap-2">
+            {SQUAD.map(name => {
+              const present = players[name].present
+              return (
+                <button key={name} onClick={() => togglePresent(name)}
+                  className="px-3 py-1 rounded-full font-ui text-sm font-medium transition-all"
+                  style={{
+                    backgroundColor: present ? '#c0161c22' : '#1a1a1a',
+                    color: present ? '#fff' : '#444',
+                    border: `1px solid ${present ? '#c0161c' : '#2a2a2a'}`,
+                  }}>
+                  {name}
+                </button>
               )
             })}
           </div>
