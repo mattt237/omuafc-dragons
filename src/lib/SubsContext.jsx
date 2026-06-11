@@ -20,6 +20,8 @@ export function SubsProvider({ children }) {
   const [halfRunning, setHalfRunning] = useState(false)
   const [halfDone, setHalfDone] = useState(false)
   const [flash, setFlash]       = useState(false)
+  const [scoreDragons, setScoreDragons] = useState(0)
+  const [scoreOpp, setScoreOpp]         = useState(0)
 
   const halfRunningRef = useRef(false)
   const lastTickRef    = useRef(null)
@@ -115,12 +117,19 @@ export function SubsProvider({ children }) {
     }))
   }
 
+  function adjustScore(side, delta) {
+    if (side === 'dragons') setScoreDragons(s => Math.max(0, s + delta))
+    else setScoreOpp(s => Math.max(0, s + delta))
+  }
+
   function resetMatch() {
     setPlayers(initPlayers())
     setHalfSecs(HALF_SECS)
     setHalfRunning(false)
     setHalfDone(false)
     setFlash(false)
+    setScoreDragons(0)
+    setScoreOpp(0)
     lastTickRef.current = null
   }
 
@@ -140,6 +149,7 @@ export function SubsProvider({ children }) {
       presentCount, targetSecs,
       toggleHalf, restartHalf,
       togglePlayer, toggleGoalie, togglePresent, addGoal,
+      scoreDragons, scoreOpp, adjustScore,
       resetMatch,
       SQUAD,
     }}>

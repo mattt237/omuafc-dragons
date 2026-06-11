@@ -14,6 +14,7 @@ export default function Subs() {
     presentCount, targetSecs,
     toggleHalf, restartHalf,
     togglePlayer, toggleGoalie, togglePresent, addGoal,
+    scoreDragons, scoreOpp, adjustScore,
     resetMatch,
   } = useSubs()
 
@@ -25,6 +26,42 @@ export default function Subs() {
       </div>
 
       <div className="px-3 pt-3 pb-24 space-y-3">
+
+        {/* SCOREBOARD */}
+        <div className="card p-4">
+          <div className="text-[10px] font-ui text-[#555] uppercase tracking-widest text-center mb-3">Score</div>
+          <div className="flex items-center justify-between gap-2">
+
+            {/* Dragons */}
+            <div className="flex items-center gap-2 flex-1 justify-start">
+              <button onClick={() => adjustScore('dragons', -1)}
+                className="w-9 h-9 rounded-full bg-[#1a1a1a] font-heading text-2xl text-[#888] flex items-center justify-center active:bg-[#333]">−</button>
+              <div className="text-center w-8">
+                <div className="font-heading text-5xl text-white leading-none">{scoreDragons}</div>
+              </div>
+              <button onClick={() => adjustScore('dragons', 1)}
+                className="w-9 h-9 rounded-full bg-[#c0161c] font-heading text-2xl text-white flex items-center justify-center active:bg-[#a01010]">+</button>
+            </div>
+
+            {/* Divider */}
+            <div className="flex flex-col items-center flex-shrink-0 px-2">
+              <div className="font-heading text-2xl text-[#444]">–</div>
+              <div className="text-[9px] text-[#333] font-ui uppercase tracking-wider mt-0.5">DRG · OPP</div>
+            </div>
+
+            {/* Opposition */}
+            <div className="flex items-center gap-2 flex-1 justify-end">
+              <button onClick={() => adjustScore('opp', -1)}
+                className="w-9 h-9 rounded-full bg-[#1a1a1a] font-heading text-2xl text-[#888] flex items-center justify-center active:bg-[#333]">−</button>
+              <div className="text-center w-8">
+                <div className="font-heading text-5xl text-[#888] leading-none">{scoreOpp}</div>
+              </div>
+              <button onClick={() => adjustScore('opp', 1)}
+                className="w-9 h-9 rounded-full bg-[#333] font-heading text-2xl text-white flex items-center justify-center active:bg-[#444]">+</button>
+            </div>
+
+          </div>
+        </div>
 
         {/* GAME TIMER */}
         <div className="card p-4 text-center">
