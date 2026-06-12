@@ -32,8 +32,9 @@ export default function PlayerCard({ player }) {
           </div>
           <div className="flex gap-3 mt-1">
             <Stat label="Goals" value={player.goals} />
-            <Stat label="POD" value={player.player_of_day_count} gold />
-            <Stat label="GK" value={player.goalie_count} />
+            <Stat label="Apps"  value={player.appearances || 0} />
+            <Stat label="POD"   value={player.player_of_day_count} gold />
+            <Stat label="GK"    value={player.goalie_count} />
           </div>
         </div>
         <div className="text-[#666] text-sm">{expanded ? '▲' : '▼'}</div>
