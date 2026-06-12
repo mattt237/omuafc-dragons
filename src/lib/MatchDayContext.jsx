@@ -7,7 +7,7 @@ export const SQUAD = ['Charlie', 'Finn', 'Levi', 'Kingston', 'Jai', 'Eddie', 'Tr
 function initPlayers() {
   const m = {}
   SQUAD.forEach(name => {
-    m[name] = { present: true, running: false, elapsed: 0, baseElapsed: 0, startedAt: null, isGoalie: false }
+    m[name] = { present: true, running: false, elapsed: 0, baseElapsed: 0, startedAt: null, isGoalie: false, goals: 0 }
   })
   return m
 }
@@ -31,7 +31,6 @@ export function MatchDayProvider({ children }) {
   const [ourScore, setOurScore]           = useState('')
   const [theirScore, setTheirScore]       = useState('')
   const [resultOverride, setResultOverride] = useState('')
-  const [matchGoals, setMatchGoalsState]  = useState({}) // { 'Charlie Brown': 2 }
   const [podPlayer, setPodPlayer]         = useState('')
   const [goalie1, setGoalie1]             = useState('')
   const [goalie2, setGoalie2]             = useState('')
@@ -145,6 +144,14 @@ export function MatchDayProvider({ children }) {
     setPlayers(prev => ({ ...prev, [name]: { ...prev[name], isGoalie: !prev[name].isGoalie } }))
   }
 
+  function addGoal(name, delta) {
+    setPlayers(prev => {
+      const p = prev[name]
+      if (!p.present) return prev
+      return { ...prev, [name]: { ...p, goals: Math.max(0, (p.goals || 0) + delta) } }
+    })
+  }
+
   function togglePresent(name) {
     setPlayers(prev => {
       const p = prev[name]
@@ -183,9 +190,13 @@ export function MatchDayProvider({ children }) {
         .filter(n => players[n].elapsed > 0)
         .map(n => ({ player: n, seconds: Math.round(players[n].elapsed) }))
 
-      const scorers = Object.entries(matchGoals)
-        .filter(([, g]) => g > 0)
-        .map(([player, goals]) => ({ player, goals }))
+      const scorers = SQUAD
+        .filter(n => (players[n].goals || 0) > 0)
+        .map(n => {
+          const dbP = freshPlayers.find(p => p.first_name === n)
+          return dbP ? { player: `${dbP.first_name} ${dbP.last_name}`, goals: players[n].goals } : null
+        })
+        .filter(Boolean)
 
       // 1. Update match record
       const { error: matchError } = await supabase.from('matches').update({
@@ -206,7 +217,7 @@ export function MatchDayProvider({ children }) {
         const dbPlayer = freshPlayers.find(p => p.first_name === firstName)
         if (!dbPlayer) continue
         const fullName = `${dbPlayer.first_name} ${dbPlayer.last_name}`
-        const goalsScored = matchGoals[fullName] || 0
+        const goalsScored = players[firstName]?.goals || 0
         const isPOD = podPlayer === fullName
         const isGoalie = [goalie1, goalie2].includes(fullName)
         await supabase.from('players').update({
@@ -236,7 +247,6 @@ export function MatchDayProvider({ children }) {
     setOurScore('')
     setTheirScore('')
     setResultOverride('')
-    setMatchGoalsState({})
     setPodPlayer('')
     setGoalie1('')
     setGoalie2('')
@@ -258,11 +268,10 @@ export function MatchDayProvider({ children }) {
       players, sorted, onField, setOnField,
       halfSecs, halfRunning, halfDone, flash,
       presentCount, targetSecs,
-      toggleHalf, restartHalf, togglePlayer, toggleGoalie, togglePresent,
+      toggleHalf, restartHalf, togglePlayer, toggleGoalie, togglePresent, addGoal,
       matches, selectedMatchId, setSelectedMatchId,
       ourScore, setOurScore, theirScore, setTheirScore,
       resultOverride, setResultOverride, autoResult, effectiveResult,
-      matchGoals, setMatchGoals,
       podPlayer, setPodPlayer,
       goalie1, setGoalie1, goalie2, setGoalie2,
       supaPlayers,

@@ -31,11 +31,10 @@ export default function MatchDay() {
     players, sorted, onField, setOnField,
     halfSecs, halfRunning, halfDone, flash,
     presentCount, targetSecs,
-    toggleHalf, restartHalf, togglePlayer, toggleGoalie, togglePresent,
+    toggleHalf, restartHalf, togglePlayer, toggleGoalie, togglePresent, addGoal,
     matches, selectedMatchId, setSelectedMatchId,
     ourScore, setOurScore, theirScore, setTheirScore,
     resultOverride, setResultOverride, autoResult, effectiveResult,
-    matchGoals, setMatchGoals,
     podPlayer, setPodPlayer,
     goalie1, setGoalie1, goalie2, setGoalie2,
     supaPlayers, SQUAD,
@@ -181,20 +180,49 @@ export default function MatchDay() {
               return (
                 <div key={name} style={{ opacity: p.present ? 1 : 0.3, borderTop: i > 0 ? '1px solid #1a1a1a' : 'none' }}>
                   <div className="flex items-center gap-1.5 px-2" style={{ height: 44 }}>
+                    {/* Name + goalie toggle */}
                     <button onClick={() => p.present && toggleGoalie(name)}
-                      className="flex items-center gap-0.5 flex-shrink-0" style={{ width: 76 }}>
+                      className="flex items-center gap-0.5 flex-shrink-0" style={{ width: 68 }}>
                       <span className="font-heading text-base text-white leading-none">{name}</span>
                       {p.isGoalie && <span className="text-xs ml-0.5">🧤</span>}
                     </button>
+                    {/* Inline goal counter */}
+                    <div className="flex items-center gap-0.5 flex-shrink-0">
+                      <button
+                        onClick={() => p.present && addGoal(name, -1)}
+                        disabled={!p.present || (p.goals || 0) === 0}
+                        className="flex items-center justify-center rounded disabled:opacity-30"
+                        style={{ width: 22, height: 22, backgroundColor: '#1a1a1a', color: '#666' }}>
+                        <span className="font-heading text-sm leading-none">−</span>
+                      </button>
+                      <span className="font-heading text-base tabular-nums text-center"
+                        style={{ width: 18, color: (p.goals || 0) > 0 ? '#e8b84b' : '#2a2a2a' }}>
+                        {(p.goals || 0) > 0 ? p.goals : '·'}
+                      </span>
+                      <button
+                        onClick={() => p.present && addGoal(name, 1)}
+                        disabled={!p.present}
+                        className="flex items-center justify-center rounded disabled:opacity-20"
+                        style={{
+                          width: 22, height: 22,
+                          backgroundColor: (p.goals || 0) > 0 ? '#e8b84b22' : '#1a1a1a',
+                          color: (p.goals || 0) > 0 ? '#e8b84b' : '#666',
+                          border: (p.goals || 0) > 0 ? '1px solid #e8b84b44' : 'none',
+                        }}>
+                        <span className="font-heading text-sm leading-none">+</span>
+                      </button>
+                    </div>
                     <div className="flex-1" />
+                    {/* Elapsed time */}
                     <span className="font-ui text-sm tabular-nums w-11 text-right flex-shrink-0"
                       style={{ color: p.running ? '#e8b84b' : '#555' }}>
                       {fmt(p.elapsed)}
                     </span>
+                    {/* GO/STOP */}
                     <button onClick={() => p.present && togglePlayer(name)} disabled={!p.present}
                       className="font-heading text-sm flex-shrink-0 rounded-lg disabled:opacity-20 transition-colors"
                       style={{
-                        width: 48, height: 28,
+                        width: 46, height: 28,
                         backgroundColor: p.running ? '#c0161c' : '#22c55e1a',
                         color: p.running ? '#fff' : '#22c55e',
                         border: `1px solid ${p.running ? 'transparent' : '#22c55e44'}`,
@@ -284,30 +312,6 @@ export default function MatchDay() {
                     </button>
                   ))}
                 </div>
-              </div>
-
-              {/* Goal scorers */}
-              <div>
-                <div className="text-xs text-[#666] font-ui uppercase tracking-wider mb-2">Goal Scorers</div>
-                {presentSupaPlayers.length === 0
-                  ? <div className="text-xs text-[#444] font-ui italic">No players — check attendance (Step 2)</div>
-                  : presentSupaPlayers.map(p => {
-                      const fullName = `${p.first_name} ${p.last_name}`
-                      const g = matchGoals[fullName] || 0
-                      return (
-                        <div key={p.id} className="flex items-center justify-between py-2 border-b border-[#1a1a1a] last:border-0">
-                          <span className="font-ui text-sm text-white">{p.first_name}</span>
-                          <div className="flex items-center gap-3">
-                            <button onClick={() => setMatchGoals(fullName, g - 1)} disabled={g === 0}
-                              className="w-8 h-8 rounded-full bg-[#1a1a1a] text-white text-xl flex items-center justify-center disabled:opacity-30 leading-none">−</button>
-                            <span className="font-heading text-xl w-5 text-center" style={{ color: g > 0 ? '#e8b84b' : '#333' }}>{g}</span>
-                            <button onClick={() => setMatchGoals(fullName, g + 1)}
-                              className="w-8 h-8 rounded-full bg-[#c0161c] text-white text-xl flex items-center justify-center leading-none">+</button>
-                          </div>
-                        </div>
-                      )
-                    })
-                }
               </div>
 
               {/* Player of the Day */}
@@ -405,7 +409,7 @@ export default function MatchDay() {
                 <div className="text-sm text-[#e8b84b] font-ui">⭐ {podPlayer.split(' ')[0]} — Player of the Day</div>
               )}
               <div className="text-xs text-[#555] font-ui">
-                {presentCount} players · {Object.values(matchGoals).reduce((s, g) => s + g, 0)} goals recorded
+                {presentCount} players · {SQUAD.reduce((s, n) => s + (players[n]?.goals || 0), 0)} goals recorded
               </div>
             </div>
             <div className="flex gap-3 pt-1">
