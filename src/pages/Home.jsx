@@ -20,30 +20,28 @@ export default function Home() {
     ])
 
     if (matches && standings) {
-      // W/D/L from standings row for Dragons
-      const pts = t => (t.won * 3) + t.drawn
-      const sorted = [...standings].sort((a, b) => pts(b) - pts(a) || b.won - a.won)
-      const idx = sorted.findIndex(t => t.team.toLowerCase().includes('dragons'))
-      const dragonsRow = idx !== -1 ? sorted[idx] : null
+      // W/D/L/GF/GA/Played — all from matches table directly
+      const counted = matches.filter(m => ['W', 'L', 'D'].includes(m.result))
+      const wins        = counted.filter(m => m.result === 'W').length
+      const draws       = counted.filter(m => m.result === 'D').length
+      const losses      = counted.filter(m => m.result === 'L').length
+      const playedCount = counted.length
+      const gf          = counted.reduce((s, m) => s + (m.our_score   || 0), 0)
+      const ga          = counted.reduce((s, m) => s + (m.their_score || 0), 0)
+      const winRate     = playedCount > 0 ? Math.round((wins / playedCount) * 100) : 0
 
-      // GF/GA and played count from matches (W/L/D only)
-      const played = matches.filter(m => ['W', 'L', 'D'].includes(m.result) && m.our_score != null)
-      const gf = played.reduce((s, m) => s + (m.our_score || 0), 0)
-      const ga = played.reduce((s, m) => s + (m.their_score || 0), 0)
-      const wins = dragonsRow?.won ?? 0
-      const playedCount = played.length
-      const winRate = playedCount > 0 ? Math.round((wins / playedCount) * 100) : 0
+      // Position — from standings table only (rank by pts desc)
+      const ptsOf = t => (t.won * 3) + t.drawn
+      const sorted = [...standings].sort((a, b) => ptsOf(b) - ptsOf(a) || b.won - a.won)
+      const idx = sorted.findIndex(t => t.team.toLowerCase().includes('dragons'))
 
       setStats({
-        wins,
-        draws:    dragonsRow?.drawn ?? 0,
-        losses:   dragonsRow?.lost  ?? 0,
-        pos:      idx !== -1 ? idx + 1 : null,
-        total:    sorted.length,
-        gf,
-        ga,
-        played:   playedCount,
+        wins, draws, losses,
+        played:  playedCount,
         winRate,
+        gf, ga,
+        pos:   idx !== -1 ? idx + 1 : null,
+        total: sorted.length,
       })
 
       // Latest result
