@@ -27,9 +27,11 @@ export function MatchDayProvider({ children }) {
   const [matches, setMatches]                   = useState([])
   const [selectedMatchId, setSelectedMatchId]   = useState(null)
 
+  // Live score counter
+  const [scoreDragons, setScoreDragons] = useState(0)
+  const [scoreOpp, setScoreOpp]         = useState(0)
+
   // End-of-game fields
-  const [ourScore, setOurScore]           = useState('')
-  const [theirScore, setTheirScore]       = useState('')
   const [resultOverride, setResultOverride] = useState('')
   const [podPlayer, setPodPlayer]         = useState('')
   const [goalie1, setGoalie1]             = useState('')
@@ -164,21 +166,18 @@ export function MatchDayProvider({ children }) {
     })
   }
 
-  function setMatchGoals(fullName, goals) {
-    setMatchGoalsState(prev => ({ ...prev, [fullName]: Math.max(0, goals) }))
+  function adjustScore(side, delta) {
+    if (side === 'dragons') setScoreDragons(s => Math.max(0, s + delta))
+    else setScoreOpp(s => Math.max(0, s + delta))
   }
 
-  // Auto-calculate result from scores
-  const os = ourScore !== '' ? parseInt(ourScore) : null
-  const ts = theirScore !== '' ? parseInt(theirScore) : null
-  const autoResult = (os !== null && ts !== null)
-    ? (os > ts ? 'W' : os < ts ? 'L' : 'D')
-    : null
+  // Auto-calculate result from live score counter
+  const autoResult = scoreDragons > scoreOpp ? 'W' : scoreDragons < scoreOpp ? 'L' : 'D'
   const effectiveResult = resultOverride || autoResult
 
   async function submitMatch() {
     if (!selectedMatchId) { showToast('No match selected', false); return }
-    if (!effectiveResult) { showToast('Enter the score in Step 4', false); return }
+    if (!effectiveResult) { showToast('Score is 0–0 — override result if needed', false); return }
 
     setSubmitPending(true)
     try {
@@ -201,8 +200,8 @@ export function MatchDayProvider({ children }) {
       // 1. Update match record
       const { error: matchError } = await supabase.from('matches').update({
         result: effectiveResult,
-        our_score: os,
-        their_score: ts,
+        our_score: scoreDragons,
+        their_score: scoreOpp,
         scorers,
         player_of_day: podPlayer || null,
         goalie_1: goalie1 || null,
@@ -244,8 +243,8 @@ export function MatchDayProvider({ children }) {
     setHalfRunning(false)
     setHalfDone(false)
     setFlash(false)
-    setOurScore('')
-    setTheirScore('')
+    setScoreDragons(0)
+    setScoreOpp(0)
     setResultOverride('')
     setPodPlayer('')
     setGoalie1('')
@@ -270,7 +269,7 @@ export function MatchDayProvider({ children }) {
       presentCount, targetSecs,
       toggleHalf, restartHalf, togglePlayer, toggleGoalie, togglePresent, addGoal,
       matches, selectedMatchId, setSelectedMatchId,
-      ourScore, setOurScore, theirScore, setTheirScore,
+      scoreDragons, scoreOpp, adjustScore,
       resultOverride, setResultOverride, autoResult, effectiveResult,
       podPlayer, setPodPlayer,
       goalie1, setGoalie1, goalie2, setGoalie2,

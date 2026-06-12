@@ -33,7 +33,7 @@ export default function MatchDay() {
     presentCount, targetSecs,
     toggleHalf, restartHalf, togglePlayer, toggleGoalie, togglePresent, addGoal,
     matches, selectedMatchId, setSelectedMatchId,
-    ourScore, setOurScore, theirScore, setTheirScore,
+    scoreDragons, scoreOpp, adjustScore,
     resultOverride, setResultOverride, autoResult, effectiveResult,
     podPlayer, setPodPlayer,
     goalie1, setGoalie1, goalie2, setGoalie2,
@@ -47,10 +47,8 @@ export default function MatchDay() {
   const [showResetModal, setShowResetModal]   = useState(false)
 
   const selectedMatch = matches.find(m => m.id === selectedMatchId)
-  const os = ourScore !== '' ? parseInt(ourScore) : null
-  const ts = theirScore !== '' ? parseInt(theirScore) : null
+  const oppName = selectedMatch?.opponent || 'Opposition'
 
-  // Present players from supabase (matched by first name to SQUAD presence)
   const presentSupaPlayers = supaPlayers.filter(p =>
     SQUAD.includes(p.first_name) && players[p.first_name]?.present
   )
@@ -103,7 +101,9 @@ export default function MatchDay() {
         {/* ── STEP 2: ATTENDANCE ── */}
         <div className="card p-3">
           <StepHeader number={2} title="ATTENDANCE" />
-          <div className="flex flex-wrap gap-2 mb-2">
+
+          {/* Presence chips */}
+          <div className="flex flex-wrap gap-2 mb-3">
             {SQUAD.map(name => {
               const present = players[name].present
               return (
@@ -119,7 +119,23 @@ export default function MatchDay() {
               )
             })}
           </div>
-          <div className="text-xs text-[#555] font-ui text-right">
+
+          {/* On Field + Target + count */}
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
+              <div className="text-xs text-[#555] font-ui">On field</div>
+              <button onClick={() => setOnField(n => Math.max(1, n - 1))}
+                className="w-7 h-7 rounded-full bg-[#1a1a1a] text-white font-heading text-lg leading-none flex items-center justify-center">−</button>
+              <span className="font-heading text-2xl text-white w-5 text-center">{onField}</span>
+              <button onClick={() => setOnField(n => Math.min(10, n + 1))}
+                className="w-7 h-7 rounded-full bg-[#c0161c] text-white font-heading text-lg leading-none flex items-center justify-center">+</button>
+            </div>
+            <div className="flex-1 text-right">
+              <span className="font-heading text-xl text-[#e8b84b]">{fmt(targetSecs)}</span>
+              <span className="text-xs text-[#555] font-ui ml-1">target ea</span>
+            </div>
+          </div>
+          <div className="text-xs text-[#555] font-ui text-right mt-1">
             {presentCount} of {SQUAD.length} available
           </div>
         </div>
@@ -127,6 +143,46 @@ export default function MatchDay() {
         {/* ── STEP 3: LIVE GAME ── */}
         <div className="card p-3">
           <StepHeader number={3} title="LIVE GAME" />
+
+          {/* Live score counter */}
+          <div className="flex items-center justify-between gap-2 mb-4">
+            {/* Dragons */}
+            <div className="flex flex-col items-center flex-1">
+              <div className="text-[10px] text-[#c0161c] font-ui uppercase tracking-widest mb-1.5">Dragons</div>
+              <div className="flex items-center gap-2">
+                <button onClick={() => adjustScore('dragons', -1)}
+                  className="w-9 h-9 rounded-full flex items-center justify-center font-heading text-2xl"
+                  style={{ backgroundColor: '#1a1a1a', color: '#888' }}>−</button>
+                <span className="font-heading text-center tabular-nums" style={{ fontSize: 48, color: '#fff', width: 48, lineHeight: 1 }}>
+                  {scoreDragons}
+                </span>
+                <button onClick={() => adjustScore('dragons', 1)}
+                  className="w-9 h-9 rounded-full flex items-center justify-center font-heading text-2xl"
+                  style={{ backgroundColor: '#c0161c', color: '#fff' }}>+</button>
+              </div>
+            </div>
+
+            {/* Divider */}
+            <div className="font-heading text-3xl text-[#333] flex-shrink-0 mt-4">–</div>
+
+            {/* Opponent */}
+            <div className="flex flex-col items-center flex-1">
+              <div className="text-[10px] text-[#555] font-ui uppercase tracking-widest mb-1.5 truncate max-w-full px-1 text-center">
+                {oppName}
+              </div>
+              <div className="flex items-center gap-2">
+                <button onClick={() => adjustScore('opp', -1)}
+                  className="w-9 h-9 rounded-full flex items-center justify-center font-heading text-2xl"
+                  style={{ backgroundColor: '#1a1a1a', color: '#888' }}>−</button>
+                <span className="font-heading text-center tabular-nums" style={{ fontSize: 48, color: '#888', width: 48, lineHeight: 1 }}>
+                  {scoreOpp}
+                </span>
+                <button onClick={() => adjustScore('opp', 1)}
+                  className="w-9 h-9 rounded-full flex items-center justify-center font-heading text-2xl"
+                  style={{ backgroundColor: '#333', color: '#fff' }}>+</button>
+              </div>
+            </div>
+          </div>
 
           {/* Half timer */}
           <div className="text-center mb-3">
@@ -146,25 +202,6 @@ export default function MatchDay() {
                 className="px-4 py-2 rounded-xl font-heading text-xl border border-[#333] text-[#888]">
                 RESTART
               </button>
-            </div>
-          </div>
-
-          {/* On Field + Target */}
-          <div className="flex gap-2 mb-3">
-            <div className="flex-1 bg-[#0f0f0f] rounded-lg p-2 text-center">
-              <div className="text-[10px] text-[#555] font-ui uppercase tracking-widest mb-1.5">On Field</div>
-              <div className="flex items-center justify-center gap-2">
-                <button onClick={() => setOnField(n => Math.max(1, n - 1))}
-                  className="w-7 h-7 rounded-full bg-[#1a1a1a] text-white font-heading text-lg leading-none">−</button>
-                <span className="font-heading text-2xl text-white w-6 text-center">{onField}</span>
-                <button onClick={() => setOnField(n => Math.min(10, n + 1))}
-                  className="w-7 h-7 rounded-full bg-[#c0161c] text-white font-heading text-lg leading-none">+</button>
-              </div>
-            </div>
-            <div className="flex-1 bg-[#0f0f0f] rounded-lg p-2 text-center">
-              <div className="text-[10px] text-[#555] font-ui uppercase tracking-widest mb-1">Target</div>
-              <div className="font-heading text-2xl text-[#e8b84b]">{fmt(targetSecs)}</div>
-              <div className="text-[10px] text-[#555] font-ui">per player</div>
             </div>
           </div>
 
@@ -252,45 +289,42 @@ export default function MatchDay() {
               <span className="font-heading text-sm leading-none" style={{ color: endGameOpen ? '#fff' : '#555' }}>4</span>
             </div>
             <div className="font-heading text-lg text-[#e8b84b] flex-1">END OF GAME</div>
-            {effectiveResult && (
-              <span className="font-heading text-sm px-2 py-0.5 rounded mr-1" style={{
-                color: resultColor(effectiveResult),
-                backgroundColor: resultColor(effectiveResult) + '22',
-              }}>
-                {effectiveResult} {os !== null && ts !== null ? `${os}–${ts}` : ''}
-              </span>
-            )}
+            <span className="font-heading text-sm px-2 py-0.5 rounded mr-1" style={{
+              color: resultColor(effectiveResult),
+              backgroundColor: resultColor(effectiveResult) + '22',
+            }}>
+              {effectiveResult} {scoreDragons}–{scoreOpp}
+            </span>
             <span className="text-[#555] text-sm">{endGameOpen ? '▲' : '▼'}</span>
           </button>
 
           {endGameOpen && (
             <div className="px-3 pb-4 space-y-4 border-t border-[#1a1a1a] pt-3">
 
-              {/* Score inputs */}
-              <div>
-                <div className="text-xs text-[#666] font-ui uppercase tracking-wider mb-2">Score</div>
-                <div className="flex items-center gap-3">
-                  <div className="flex-1 text-center">
+              {/* Score summary (read-only — from live counter in Step 3) */}
+              <div className="bg-[#0f0f0f] rounded-lg p-3">
+                <div className="flex items-center justify-center gap-3">
+                  <div className="text-center flex-1">
                     <div className="text-[10px] text-[#555] font-ui mb-1">Dragons</div>
-                    <input type="number" min="0" value={ourScore}
-                      onChange={e => setOurScore(e.target.value)}
-                      className="w-full bg-[#0f0f0f] border border-[#333] rounded-lg py-3 text-white font-heading text-4xl text-center focus:outline-none focus:border-[#c0161c]"
-                    />
+                    <div className="font-heading text-5xl text-white">{scoreDragons}</div>
                   </div>
-                  <div className="font-heading text-3xl text-[#444] flex-shrink-0 mt-4">–</div>
-                  <div className="flex-1 text-center">
-                    <div className="text-[10px] text-[#555] font-ui mb-1 truncate">{selectedMatch?.opponent || 'Opposition'}</div>
-                    <input type="number" min="0" value={theirScore}
-                      onChange={e => setTheirScore(e.target.value)}
-                      className="w-full bg-[#0f0f0f] border border-[#333] rounded-lg py-3 text-white font-heading text-4xl text-center focus:outline-none focus:border-[#c0161c]"
-                    />
+                  <div className="font-heading text-3xl text-[#333]">–</div>
+                  <div className="text-center flex-1">
+                    <div className="text-[10px] text-[#555] font-ui mb-1 truncate">{oppName}</div>
+                    <div className="font-heading text-5xl text-[#888]">{scoreOpp}</div>
                   </div>
                 </div>
-                {autoResult && !resultOverride && (
-                  <div className="text-center mt-1.5 text-xs font-ui text-[#555]">
-                    Auto: <span style={{ color: resultColor(autoResult) }}>{resultLabel(autoResult)}</span>
-                  </div>
-                )}
+                <div className="text-center mt-2">
+                  <span className="font-heading text-xl" style={{ color: resultColor(effectiveResult) }}>
+                    {resultLabel(effectiveResult)}
+                  </span>
+                  {resultOverride && (
+                    <span className="text-[10px] text-[#555] font-ui ml-2">(override)</span>
+                  )}
+                </div>
+                <div className="text-[10px] text-[#444] font-ui text-center mt-1">
+                  Adjust score with live counter in Step 3
+                </div>
               </div>
 
               {/* Result override */}
@@ -365,20 +399,15 @@ export default function MatchDay() {
 
         {/* ── STEP 5: SUBMIT MATCH ── */}
         <div className="card p-3">
-          <StepHeader number={5} title="SUBMIT MATCH" active={!!effectiveResult} />
+          <StepHeader number={5} title="SUBMIT MATCH" active />
           <button
             onClick={() => setShowSubmitModal(true)}
-            disabled={!selectedMatchId || !effectiveResult || submitPending}
+            disabled={!selectedMatchId || submitPending}
             className="w-full py-4 rounded-xl font-heading text-2xl text-white disabled:opacity-30 active:bg-[#a01010] transition-colors"
             style={{ backgroundColor: '#c0161c' }}
           >
             {submitPending ? 'SUBMITTING...' : 'SUBMIT MATCH'}
           </button>
-          {!effectiveResult && (
-            <div className="text-center text-[10px] text-[#555] font-ui mt-2">
-              Enter score in Step 4 to unlock
-            </div>
-          )}
         </div>
 
         {/* Reset */}
@@ -398,13 +427,11 @@ export default function MatchDay() {
             style={{ paddingBottom: 'max(24px, env(safe-area-inset-bottom))' }}>
             <div className="font-heading text-2xl text-white text-center">Submit Result?</div>
             <div className="text-center space-y-1">
-              <div className="font-heading text-5xl text-white">{os ?? '?'} – {ts ?? '?'}</div>
-              <div className="text-sm text-[#888] font-ui">Dragons vs {selectedMatch?.opponent || '—'}</div>
-              {effectiveResult && (
-                <div className="font-heading text-2xl" style={{ color: resultColor(effectiveResult) }}>
-                  {resultLabel(effectiveResult)}
-                </div>
-              )}
+              <div className="font-heading text-5xl text-white">{scoreDragons} – {scoreOpp}</div>
+              <div className="text-sm text-[#888] font-ui">Dragons vs {oppName}</div>
+              <div className="font-heading text-2xl" style={{ color: resultColor(effectiveResult) }}>
+                {resultLabel(effectiveResult)}
+              </div>
               {podPlayer && (
                 <div className="text-sm text-[#e8b84b] font-ui">⭐ {podPlayer.split(' ')[0]} — Player of the Day</div>
               )}
