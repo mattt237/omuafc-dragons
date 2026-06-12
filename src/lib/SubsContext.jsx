@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useRef, useState } from 'react'
+import { supabase } from './supabase'
 
 const HALF_SECS = 22 * 60
 const SQUAD = ['Charlie', 'Finn', 'Levi', 'Kingston', 'Jai', 'Eddie', 'Tristan', 'James', 'Callum', 'Noah']
@@ -14,18 +15,40 @@ function initPlayers() {
 const SubsContext = createContext(null)
 
 export function SubsProvider({ children }) {
-  const [players, setPlayers] = useState(initPlayers)
-  const [onField, setOnField]   = useState(7)
-  const [halfSecs, setHalfSecs] = useState(HALF_SECS)
-  const [halfRunning, setHalfRunning] = useState(false)
-  const [halfDone, setHalfDone] = useState(false)
-  const [flash, setFlash]       = useState(false)
+  const [players, setPlayers]           = useState(initPlayers)
+  const [onField, setOnField]           = useState(7)
+  const [halfSecs, setHalfSecs]         = useState(HALF_SECS)
+  const [halfRunning, setHalfRunning]   = useState(false)
+  const [halfDone, setHalfDone]         = useState(false)
+  const [flash, setFlash]               = useState(false)
   const [scoreDragons, setScoreDragons] = useState(0)
   const [scoreOpp, setScoreOpp]         = useState(0)
+  const [matches, setMatches]           = useState([])
+  const [selectedMatchId, setSelectedMatchId] = useState(null)
+  const [toast, setToast]               = useState(null) // { text, ok }
 
   const halfRunningRef = useRef(false)
   const lastTickRef    = useRef(null)
   halfRunningRef.current = halfRunning
+
+  // Load matches for selector (recent + upcoming, ordered by date desc)
+  useEffect(() => {
+    supabase
+      .from('matches')
+      .select('id, round, opponent, date, home_away, result')
+      .order('date', { ascending: false })
+      .then(({ data }) => {
+        if (!data) return
+        setMatches(data)
+        // Auto-select next upcoming match (no result, nearest future date)
+        const today = new Date().toISOString().split('T')[0]
+        const upcoming = [...data]
+          .filter(m => !m.result && m.date >= today)
+          .sort((a, b) => a.date > b.date ? 1 : -1)
+        if (upcoming.length) setSelectedMatchId(upcoming[0].id)
+        else if (data.length) setSelectedMatchId(data[0].id) // fallback: most recent
+      })
+  }, [])
 
   // Global interval — runs forever regardless of active page
   useEffect(() => {
@@ -66,6 +89,11 @@ export function SubsProvider({ children }) {
     }, 250)
     return () => clearInterval(id)
   }, [])
+
+  function showToast(text, ok = true) {
+    setToast({ text, ok })
+    setTimeout(() => setToast(null), 3000)
+  }
 
   function toggleHalf() {
     if (halfDone) return
@@ -122,6 +150,25 @@ export function SubsProvider({ children }) {
     else setScoreOpp(s => Math.max(0, s + delta))
   }
 
+  async function saveToMatch() {
+    if (!selectedMatchId) { showToast('No match selected', false); return }
+    const snapshot = { ...players }
+    const playerMinutes = SQUAD
+      .filter(name => snapshot[name].elapsed > 0)
+      .map(name => ({ player: name, seconds: Math.round(snapshot[name].elapsed) }))
+
+    const { error } = await supabase
+      .from('matches')
+      .update({ player_minutes: playerMinutes })
+      .eq('id', selectedMatchId)
+
+    if (error) { showToast('Save failed', false); return }
+
+    const match = matches.find(m => m.id === selectedMatchId)
+    const label = match ? `Rd ${match.round}` : 'match'
+    showToast(`Minutes saved to ${label} ✓`)
+  }
+
   function resetMatch() {
     setPlayers(initPlayers())
     setHalfSecs(HALF_SECS)
@@ -150,6 +197,8 @@ export function SubsProvider({ children }) {
       toggleHalf, restartHalf,
       togglePlayer, toggleGoalie, togglePresent, addGoal,
       scoreDragons, scoreOpp, adjustScore,
+      matches, selectedMatchId, setSelectedMatchId,
+      saveToMatch, toast,
       resetMatch,
       SQUAD,
     }}>

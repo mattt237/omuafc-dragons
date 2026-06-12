@@ -248,6 +248,26 @@ export default function Matches() {
                             <p className="mt-2 text-[#777]">GK: {[m.goalie_1, m.goalie_2].filter(Boolean).map(n => n.split(' ')[0]).join(' & ')}</p>
                           )}
                           {m.notes && <p className="mt-2 text-[#555] italic">{m.notes}</p>}
+                          {m.player_minutes?.length > 0 && (
+                            <div className="mt-3 pt-3 border-t border-[#1f1f1f]">
+                              <div className="text-[10px] text-[#555] uppercase tracking-wider mb-2">Sub Tracker Data</div>
+                              <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+                                {[...m.player_minutes]
+                                  .sort((a, b) => b.seconds - a.seconds)
+                                  .map(({ player, seconds }) => {
+                                    const mins = Math.floor(seconds / 60)
+                                    const secs = seconds % 60
+                                    const mm = `${String(mins).padStart(2,'0')}:${String(secs).padStart(2,'0')}`
+                                    return (
+                                      <div key={player} className="flex items-center justify-between gap-2">
+                                        <span className="text-[#888] text-xs">{player}</span>
+                                        <span className="text-[#666] text-xs tabular-nums">{mm}</span>
+                                      </div>
+                                    )
+                                  })}
+                              </div>
+                            </div>
+                          )}
                         </>
                       )}
                     </div>

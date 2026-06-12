@@ -5,6 +5,12 @@ function fmt(secs) {
   return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`
 }
 
+function matchLabel(m) {
+  if (!m) return '—'
+  const d = m.date ? new Date(m.date + 'T00:00:00').toLocaleDateString('en-NZ', { day: 'numeric', month: 'short' }) : ''
+  return `Rd ${m.round} · ${m.opponent}${d ? ' · ' + d : ''}`
+}
+
 const SQUAD = ['Charlie', 'Finn', 'Levi', 'Kingston', 'Jai', 'Eddie', 'Tristan', 'James', 'Callum', 'Noah']
 
 export default function Subs() {
@@ -15,6 +21,8 @@ export default function Subs() {
     toggleHalf, restartHalf,
     togglePlayer, toggleGoalie, togglePresent, addGoal,
     scoreDragons, scoreOpp, adjustScore,
+    matches, selectedMatchId, setSelectedMatchId,
+    saveToMatch, toast,
     resetMatch,
   } = useSubs()
 
@@ -27,12 +35,25 @@ export default function Subs() {
 
       <div className="px-3 pt-3 pb-24 space-y-3">
 
+        {/* MATCH SELECTOR */}
+        <div className="card p-3">
+          <div className="text-[10px] font-ui text-[#555] uppercase tracking-widest mb-2">Today's Match</div>
+          <select
+            value={selectedMatchId || ''}
+            onChange={e => setSelectedMatchId(e.target.value)}
+            className="w-full bg-[#0f0f0f] border border-[#333] rounded-lg px-3 py-2.5 text-white font-ui text-sm focus:outline-none focus:border-[#c0161c]"
+          >
+            <option value="">— Select match —</option>
+            {matches.map(m => (
+              <option key={m.id} value={m.id}>{matchLabel(m)}</option>
+            ))}
+          </select>
+        </div>
+
         {/* SCOREBOARD */}
         <div className="card p-4">
           <div className="text-[10px] font-ui text-[#555] uppercase tracking-widest text-center mb-3">Score</div>
           <div className="flex items-center justify-between gap-2">
-
-            {/* Dragons */}
             <div className="flex items-center gap-2 flex-1 justify-start">
               <button onClick={() => adjustScore('dragons', -1)}
                 className="w-9 h-9 rounded-full bg-[#1a1a1a] font-heading text-2xl text-[#888] flex items-center justify-center active:bg-[#333]">−</button>
@@ -42,14 +63,10 @@ export default function Subs() {
               <button onClick={() => adjustScore('dragons', 1)}
                 className="w-9 h-9 rounded-full bg-[#c0161c] font-heading text-2xl text-white flex items-center justify-center active:bg-[#a01010]">+</button>
             </div>
-
-            {/* Divider */}
             <div className="flex flex-col items-center flex-shrink-0 px-2">
               <div className="font-heading text-2xl text-[#444]">–</div>
               <div className="text-[9px] text-[#333] font-ui uppercase tracking-wider mt-0.5">DRG · OPP</div>
             </div>
-
-            {/* Opposition */}
             <div className="flex items-center gap-2 flex-1 justify-end">
               <button onClick={() => adjustScore('opp', -1)}
                 className="w-9 h-9 rounded-full bg-[#1a1a1a] font-heading text-2xl text-[#888] flex items-center justify-center active:bg-[#333]">−</button>
@@ -59,37 +76,26 @@ export default function Subs() {
               <button onClick={() => adjustScore('opp', 1)}
                 className="w-9 h-9 rounded-full bg-[#333] font-heading text-2xl text-white flex items-center justify-center active:bg-[#444]">+</button>
             </div>
-
           </div>
         </div>
 
         {/* GAME TIMER */}
         <div className="card p-4 text-center">
           <div className="text-[10px] font-ui text-[#555] uppercase tracking-widest mb-1">Half Timer</div>
-          <div
-            className="font-heading leading-none"
-            style={{
-              fontSize: 80,
-              color: halfDone
-                ? (flash ? '#c0161c' : '#444')
-                : halfSecs < 120 ? '#e8b84b' : '#fff',
-            }}
-          >
+          <div className="font-heading leading-none" style={{
+            fontSize: 80,
+            color: halfDone ? (flash ? '#c0161c' : '#444') : halfSecs < 120 ? '#e8b84b' : '#fff',
+          }}>
             {fmt(halfSecs)}
           </div>
           <div className="flex gap-2 mt-4 justify-center">
-            <button
-              onClick={toggleHalf}
-              disabled={halfDone}
+            <button onClick={toggleHalf} disabled={halfDone}
               className="px-6 py-2.5 rounded-xl font-heading text-xl disabled:opacity-30 transition-colors"
-              style={{ backgroundColor: halfRunning ? '#c0161c' : '#22c55e', color: '#fff' }}
-            >
+              style={{ backgroundColor: halfRunning ? '#c0161c' : '#22c55e', color: '#fff' }}>
               {halfRunning ? 'PAUSE' : halfDone ? 'DONE' : 'START'}
             </button>
-            <button
-              onClick={restartHalf}
-              className="px-5 py-2.5 rounded-xl font-heading text-xl border border-[#333] text-[#888]"
-            >
+            <button onClick={restartHalf}
+              className="px-5 py-2.5 rounded-xl font-heading text-xl border border-[#333] text-[#888]">
               RESTART HALF
             </button>
           </div>
@@ -107,78 +113,44 @@ export default function Subs() {
               const barColor = pct > 100 ? '#a855f7' : pct >= 75 ? '#22c55e' : pct >= 50 ? '#f97316' : '#ef4444'
               const absent = !p.present
               const goals = p.goals || 0
-
               return (
-                <div key={name}
-                  className="px-3 border-t border-[#1a1a1a] first:border-0"
-                  style={{ opacity: absent ? 0.3 : 1 }}>
-
+                <div key={name} className="px-3 border-t border-[#1a1a1a] first:border-0" style={{ opacity: absent ? 0.3 : 1 }}>
                   <div className="flex items-center gap-1.5" style={{ height: 44 }}>
-
-                    {/* Name + goalie toggle */}
-                    <button
-                      onClick={() => !absent && toggleGoalie(name)}
-                      className="flex items-center gap-1 min-w-0"
-                      style={{ width: 80, flexShrink: 0 }}
-                    >
+                    <button onClick={() => !absent && toggleGoalie(name)}
+                      className="flex items-center gap-1 min-w-0" style={{ width: 80, flexShrink: 0 }}>
                       <span className="font-heading text-lg text-white leading-none">{name}</span>
                       {p.isGoalie && <span className="text-xs leading-none">🧤</span>}
                     </button>
-
-                    {/* Goal counter */}
                     <div className="flex items-center gap-1 flex-shrink-0">
-                      <button
-                        onClick={() => !absent && addGoal(name, -1)}
-                        disabled={absent || goals === 0}
+                      <button onClick={() => !absent && addGoal(name, -1)} disabled={absent || goals === 0}
                         className="w-6 h-6 rounded-full flex items-center justify-center font-heading text-sm disabled:opacity-30"
-                        style={{ backgroundColor: '#1a1a1a', color: '#888' }}
-                      >−</button>
-                      <span
-                        className="font-heading text-base w-5 text-center"
-                        style={{ color: goals > 0 ? '#e8b84b' : '#444' }}
-                      >
+                        style={{ backgroundColor: '#1a1a1a', color: '#888' }}>−</button>
+                      <span className="font-heading text-base w-5 text-center" style={{ color: goals > 0 ? '#e8b84b' : '#444' }}>
                         {goals > 0 ? goals : '⚽'}
                       </span>
-                      <button
-                        onClick={() => !absent && addGoal(name, 1)}
-                        disabled={absent}
+                      <button onClick={() => !absent && addGoal(name, 1)} disabled={absent}
                         className="w-6 h-6 rounded-full flex items-center justify-center font-heading text-sm disabled:opacity-30"
-                        style={{ backgroundColor: goals > 0 ? '#e8b84b22' : '#1a1a1a', color: goals > 0 ? '#e8b84b' : '#888', border: goals > 0 ? '1px solid #e8b84b55' : 'none' }}
-                      >+</button>
+                        style={{ backgroundColor: goals > 0 ? '#e8b84b22' : '#1a1a1a', color: goals > 0 ? '#e8b84b' : '#888', border: goals > 0 ? '1px solid #e8b84b55' : 'none' }}>+</button>
                     </div>
-
-                    {/* Spacer */}
                     <div className="flex-1" />
-
-                    {/* Elapsed */}
-                    <span
-                      className="font-ui text-sm tabular-nums w-11 text-right flex-shrink-0"
-                      style={{ color: p.running ? '#e8b84b' : '#666' }}
-                    >
+                    <span className="font-ui text-sm tabular-nums w-11 text-right flex-shrink-0"
+                      style={{ color: p.running ? '#e8b84b' : '#666' }}>
                       {fmt(p.elapsed)}
                     </span>
-
-                    {/* Start/Stop */}
-                    <button
-                      onClick={() => !absent && togglePlayer(name)}
-                      disabled={absent}
+                    <button onClick={() => !absent && togglePlayer(name)} disabled={absent}
                       className="font-heading text-sm flex-shrink-0 rounded-lg disabled:opacity-20 transition-colors"
                       style={{
                         width: 52, height: 30,
                         backgroundColor: absent ? 'transparent' : p.running ? '#c0161c' : '#22c55e1a',
                         color: absent ? '#333' : p.running ? '#fff' : '#22c55e',
                         border: `1px solid ${absent ? '#222' : p.running ? 'transparent' : '#22c55e44'}`,
-                      }}
-                    >
+                      }}>
                       {p.running ? 'STOP' : 'GO'}
                     </button>
                   </div>
-
-                  {/* Progress bar */}
                   <div className="h-1 bg-[#1a1a1a] rounded-full overflow-hidden mb-2 -mt-0.5">
                     {!absent && pct > 0 && (
-                      <div className="h-full rounded-full"
-                        style={{ width: `${Math.min(pct, 100)}%`, backgroundColor: barColor }} />
+                      <div className="h-full rounded-full" style={{ width: `${Math.min(pct, 100)}%`, backgroundColor: barColor }} />
                     )}
                   </div>
                 </div>
@@ -227,6 +199,15 @@ export default function Subs() {
           </div>
         </div>
 
+        {/* SAVE TO MATCH */}
+        <button
+          onClick={saveToMatch}
+          disabled={!selectedMatchId}
+          className="w-full py-3 rounded-xl font-heading text-xl text-white bg-[#c0161c] disabled:opacity-30 active:bg-[#a01010]"
+        >
+          SAVE TO MATCH
+        </button>
+
         {/* RESET */}
         <button
           onClick={resetMatch}
@@ -236,6 +217,19 @@ export default function Subs() {
         </button>
 
       </div>
+
+      {/* TOAST */}
+      {toast && (
+        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-xl font-ui text-sm font-medium shadow-lg transition-all"
+          style={{
+            backgroundColor: toast.ok ? '#22c55e' : '#c0161c',
+            color: '#fff',
+            maxWidth: 280,
+            textAlign: 'center',
+          }}>
+          {toast.text}
+        </div>
+      )}
     </div>
   )
 }
