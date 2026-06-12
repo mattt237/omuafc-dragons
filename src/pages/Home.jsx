@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
+import TeamValues from '../components/TeamValues'
 
 export default function Home() {
   const [stats, setStats] = useState(null)
@@ -25,19 +26,24 @@ export default function Home() {
       const idx = sorted.findIndex(t => t.team.toLowerCase().includes('dragons'))
       const dragonsRow = idx !== -1 ? sorted[idx] : null
 
-      // GF/GA from matches (W/L/D only, exclude BYE/abandoned/upcoming)
+      // GF/GA and played count from matches (W/L/D only)
       const played = matches.filter(m => ['W', 'L', 'D'].includes(m.result) && m.our_score != null)
       const gf = played.reduce((s, m) => s + (m.our_score || 0), 0)
       const ga = played.reduce((s, m) => s + (m.their_score || 0), 0)
+      const wins = dragonsRow?.won ?? 0
+      const playedCount = played.length
+      const winRate = playedCount > 0 ? Math.round((wins / playedCount) * 100) : 0
 
       setStats({
-        wins:   dragonsRow?.won   ?? 0,
-        draws:  dragonsRow?.drawn ?? 0,
-        losses: dragonsRow?.lost  ?? 0,
-        pos:    idx !== -1 ? idx + 1 : null,
-        total:  sorted.length,
+        wins,
+        draws:    dragonsRow?.drawn ?? 0,
+        losses:   dragonsRow?.lost  ?? 0,
+        pos:      idx !== -1 ? idx + 1 : null,
+        total:    sorted.length,
         gf,
         ga,
+        played:   playedCount,
+        winRate,
       })
 
       // Latest result
@@ -72,12 +78,14 @@ export default function Home() {
         {stats && (
           <div className="card p-4">
             <div className="font-heading text-xl text-[#e8b84b] mb-3">SEASON 2026</div>
-            <div className="grid grid-cols-3 gap-2 mb-2">
-              <StatBox label="Wins"   value={stats.wins}   color="text-green-400" />
-              <StatBox label="Draws"  value={stats.draws}  color="text-[#e8b84b]" />
-              <StatBox label="Losses" value={stats.losses} color="text-[#c0161c]" />
+            <div className="grid grid-cols-4 gap-2 mb-2">
+              <StatBox label="Win Rate" value={`${stats.winRate}%`} color="text-green-400" />
+              <StatBox label="Wins"     value={stats.wins}          color="text-green-400" />
+              <StatBox label="Draws"    value={stats.draws}         color="text-[#e8b84b]" />
+              <StatBox label="Losses"   value={stats.losses}        color="text-[#c0161c]" />
             </div>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-4 gap-2">
+              <StatBox label="Played" value={stats.played} color="text-white" />
               <StatBox
                 label="Position"
                 value={stats.pos ? `${stats.pos}${ordinal(stats.pos)}` : '–'}
@@ -89,6 +97,9 @@ export default function Home() {
             </div>
           </div>
         )}
+
+        {/* Team Values */}
+        <TeamValues />
 
         {/* Latest result */}
         {latestMatch && (

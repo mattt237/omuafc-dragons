@@ -1,18 +1,12 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import PlayerCard from '../components/PlayerCard'
+import TeamValues from '../components/TeamValues'
 
 const STAFF = [
   { name: 'Matt Thompson', role: 'Co-Coach', phone: '021 292 2022', initials: 'MT' },
   { name: 'Ben Thompson',  role: 'Co-Coach', phone: '0274 567 551', initials: 'BT' },
   { name: 'Sharnie Warren', role: 'Manager', phone: '021 242 3375', initials: 'SW' },
-]
-
-const VALUES = [
-  { word: 'Focus', emoji: '🎯', desc: 'Give your best every session' },
-  { word: 'Fire',  emoji: '🔥', desc: 'Play with passion and energy' },
-  { word: 'Fair',  emoji: '🤝', desc: 'Respect teammates and opponents' },
-  { word: 'Fun',   emoji: '⚡', desc: 'Enjoy every moment of the game' },
 ]
 
 export default function Squad() {
@@ -72,20 +66,7 @@ export default function Squad() {
         </div>
 
         {/* Team Values */}
-        <div className="card p-4">
-          <div className="font-heading text-2xl text-[#e8b84b] mb-3">OUR VALUES</div>
-          <div className="grid grid-cols-2 gap-3">
-            {VALUES.map(({ word, emoji, desc }) => (
-              <div key={word} className="bg-[#0f0f0f] rounded-lg p-3">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-lg">{emoji}</span>
-                  <span className="font-heading text-xl text-[#c0161c]">{word}</span>
-                </div>
-                <div className="text-xs text-[#666] font-ui">{desc}</div>
-              </div>
-            ))}
-          </div>
-        </div>
+        <TeamValues />
 
         {/* Training & Match Day */}
         <div className="card p-4">
