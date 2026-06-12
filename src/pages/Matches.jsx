@@ -199,6 +199,7 @@ export default function Matches() {
                         {!isBye && (
                           <div className="text-xs text-[#666] font-ui mt-0.5">
                             Rd {m.round} · {m.home_away === 'H' ? 'Home' : 'Away'}
+                            {m.kickoff_time ? ` · ${m.kickoff_time}` : ''}
                           </div>
                         )}
                         {!isBye && m.scorers?.length > 0 && (
